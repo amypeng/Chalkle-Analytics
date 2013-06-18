@@ -1,0 +1,106 @@
+Table of Announced lessons ran in channel 1:
+select date_part('week',lessons.start_at+interval '13 hours'),count(lessons.id) As Announced from lessons,channel_lessons where lessons.id = channel_lessons.lesson_id and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 group by 1 order by 1;
+
+Table of Ran lessons ran in channel 1:
+select date_part('week',lessons.start_at+interval '13 hours'),count(lessons.id) As Announced from lessons,channel_lessons where lessons.id = channel_lessons.lesson_id and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and lessons.visible = true group by 1 order by 1;
+
+week 1 start from 31 Dec 2012 inclusively
+copy from command line
+
+Lessons published in channel 1:
+select date_part('week',m.Published_at),count(lessons1.id) As Published from lessons As lessons1, (select lessons.id As ID, min(bookings.created_at)+interval '13 hours' As Published_at from lessons,bookings,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 group by 1) As m, channel_lessons As channel_lessons1 where m.ID = lessons1.id and lessons1.id = channel_lessons1.lesson_id and (lessons1.created_at+interval '13 hours')>='2013-01-01' and channel_lessons1.channel_id=1 group by 1 order by 1;
+
+Table of lessons cancelled in channel 1:
+
+select date_part('week',lessons.start_at+interval '13 hours'),count(lessons.id) As Cancelled from lessons,channel_lessons where lessons.id = channel_lessons.lesson_id and lessons.visible=false and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 group by 1 order by 1;
+
+Table of lessons not free in channel 1:
+select date_part('week',lessons.start_at+interval '13 hours'),count(lessons.id) As Not_free from lessons,channel_lessons where lessons.id = channel_lessons.lesson_id and lessons.visible=true and lessons.cost>0 and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 group by 1 order by 1;
+
+Number of attendees in each day of week:
+select extract(dow from lessons.start_at),sum(bookings.guests+1) As Attendees from lessons,bookings,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1 order by 1;
+
+Number of distinct attendees in each day of week:
+select extract(dow from lessons.start_at), count( distinct bookings.chalkler_id) As Attendees from lessons,bookings,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1 order by 1;
+
+Number of distinct chalklers each week:
+select extract(dow from lessons.start_at),count(distinct bookings.chalkler_id) As Attendees from lessons,bookings,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1 order by 1;
+
+Individual classes:
+select lessons.id, lessons.cost, categories.name, extract(dow from lessons.start_at) As Day, sum(bookings.guests+1) As Attendees, lessons.max_attendee from lessons,bookings,channel_lessons, lesson_categories, categories where lessons.id = lesson_categories.lesson_id and lesson_categories.category_id=categories.id and lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and bookings.chalkler_id<>lessons.teacher_id and lessons.visible=true and bookings.visible = true and lessons.status='Published' and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1,2,3,4,6 order by 1;
+
+Most filled classes:
+select lessons.id, lessons.name, lessons.cost, categories.name, sum(bookings.guests+1) As Attendees, lessons.max_attendee from lessons,bookings,channel_lessons, lesson_categories, categories where lessons.id = lesson_categories.lesson_id and lesson_categories.category_id=categories.id and lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and bookings.chalkler_id<>lessons.teacher_id and lessons.visible=true and bookings.visible = true and lessons.status='Published' and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1,2,3,4,6 order by 5 desc;
+
+Table for number of attendees per week in channel 1:
+select date_part('week',lessons.start_at+interval '13 hours'),sum(bookings.guests+1) As Attendees from lessons,bookings,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1 order by 1;
+
+Table for number of distinct attendees per week in channel 1:
+select date_part('week',lessons.start_at+interval '13 hours'),count(distinct bookings.chalkler_id) As Attendees from lessons,bookings,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1 order by 1;
+
+Table for number of returning attendees (people who didn't sign up more than 7 days ago) per week in channel 1:
+select date_part('week',lessons.start_at+interval '13 hours'),count(distinct bookings.chalkler_id) As Attendees from lessons,bookings,chalklers, channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and bookings.chalkler_id=chalklers.id and lessons.visible=true and bookings.visible = true and bookings.status='yes' and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1 order by 1;
+
+Number of distinct categories and attendees per week in channel 1:
+
+select date_part('week',lessons.start_at+interval '13 hours'),count(distinct categories.name) As Variety,sum(bookings.guests+1) As Attendees from lessons,bookings,channel_lessons,lesson_categories, categories where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and lessons.id=lesson_categories.lesson_id and lesson_categories.category_id=categories.id and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' group by 1 order by 1;
+
+Fee paying attendees:
+select date_part('week',lessons.start_at+interval '13 hours'),sum(bookings.guests+1) As Attendees from lessons,bookings,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and lessons.visible=true and bookings.visible = true and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 and bookings.status='yes' and bookings.paid=true group by 1 order by 1;
+
+# of spots available:
+select date_part('week',lessons.start_at+interval '13 hours'),sum(lessons.max_attendee) As Max_Attendees from lessons,channel_lessons where lessons.id = channel_lessons.lesson_id and lessons.visible=true and (lessons.start_at+interval '13 hours')>='2013-01-01' and channel_lessons.channel_id=1 group by 1 order by 1;                   
+
+$ collected:
+select date_part('week',lessons.start_at+interval '13 hours'),sum(payments.total) As Collected from lessons,bookings,payments,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and payments.booking_id = bookings.id and lessons.visible=true and bookings.visible = true and payments.visible=true and (lessons.start_at+interval '13 hours')>='2012-12-31' and channel_lessons.channel_id=1 and bookings.paid=true group by 1 order by 1;
+
+Individual lessons
+select lessons2.id As ID, lessons2.teacher_payment+lessons2.venue_cost As Final_cost, coalesce(sum(payments2.total),0) As Cash, lessons2.teacher_cost As Teacher_cost, sum(bookings2.guests+1) As Attendee from lessons As lessons2, bookings As bookings2, payments As payments2 where bookings2.lesson_id=lessons2.id and bookings2.id=payments2.booking_id and bookings2.status='yes' and payments2.cash_payment=true and lessons2.visible=true and lessons2.id=590 group by 1,2,4;
+
+$ cost (excludes cash payment):
+select date_part('week',lessons.start_at+interval '13 hours'),sum(coalesce(m.Final_cost,m.Teacher_cost*m.Attendee,0)) As Collected from lessons,channel_lessons, ( select lessons2.id As ID, lessons2.teacher_payment+lessons2.venue_cost As Final_cost, lessons2.teacher_cost As Teacher_cost, sum(bookings2.guests+1) As Attendee from lessons As lessons2, bookings As bookings2 where bookings2.lesson_id=lessons2.id and bookings2.status='yes' and bookings2.visible=true and lessons2.visible=true group by 1,2,3) As m where m.ID = lessons.id and lessons.id = channel_lessons.lesson_id and lessons.visible=true and lessons.cost > 0 and (lessons.start_at+interval '13 hours')>='2012-12-31' and channel_lessons.channel_id=1 group by 1 order by 1;
+
+$ profit for each class:
+select lessons.meetup_id, lessons.name, lessons.cost, lessons.start_at, (m3.Collected - coalesce(m2.Final_cost, m2.Teacher_cost*m2.Attendee,0))/1.15 from lessons, channel_lessons, (select lessons2.id As ID, lessons2.teacher_payment+lessons2.venue_cost As Final_cost, lessons2.teacher_cost As Teacher_cost, sum(bookings2.guests+1) As Attendee from lessons As lessons2, bookings As bookings2 where bookings2.lesson_id=lessons2.id and bookings2.status='yes' and bookings2.visible=true and lessons2.visible=true group by 1,2,3) As m2, (select lessons3.id As ID,  sum(payments3.total) As Collected from lessons As lessons3,bookings As bookings3,payments As payments3 where bookings3.lesson_id=lessons3.id and payments3.booking_id = bookings3.id and lessons3.visible=true and bookings3.visible = true and payments3.visible=true and (payments3.cash_payment IS NULL OR payments3.cash_payment='f') group by 1 order by 1) As m3 where m2.ID = m3.ID and m2.ID=lessons.id and lessons.start_at>='2012-12-31' and lessons.id=channel_lessons.lesson_id and channel_lessons.channel_id=1 order by 5 desc;
+
+$ cash payments
+select date_part('week',lessons.start_at+interval '13 hours'),sum(payments.total) As Collected from lessons,bookings,payments,channel_lessons where lessons.id = channel_lessons.lesson_id and bookings.lesson_id=lessons.id and payments.booking_id = bookings.id and payments.cash_payment=true and lessons.visible=true and bookings.visible = true and payments.visible=true and (lessons.start_at+interval '13 hours')>='2012-12-31' and channel_lessons.channel_id=1 and bookings.status='yes' and bookings.paid=true group by 1 order by 1;
+
+new members per week
+select date_part('week', chalklers.created_at),count(chalklers.id) from chalklers, channel_chalklers where chalklers.id=channel_chalklers.chalkler_id and channel_chalklers.channel_id=1 and chalklers.created_at>='2012-12-31' group by 1 order by 1;
+
+Lifetime of members
+select date_part('days',c1.Latest - c2.Earliest) As Lifetime, count(c1.id) from (select chalklers1.id As id, max(bookings1.created_at) As Latest from bookings bookings1, chalklers chalklers1 where bookings1.chalkler_id=chalklers1.id group by 1) As c1, (select chalklers2.id As id, min(bookings2.created_at) As Earliest from bookings bookings2, chalklers chalklers2 where bookings2.chalkler_id=chalklers2.id group by 1) As c2 where c1.id=c2.id group by 1 order by 1;
+
+
+select date_part('weeks',c1.created_at), date_part('days',avg(c1.Latest - c2.Earliest)) As Lifetime from (select chalklers1.id As id, chalklers1.created_at As created_at, max(bookings1.created_at) As Latest from bookings bookings1, chalklers chalklers1 where bookings1.chalkler_id=chalklers1.id group by 1,2) As c1, (select chalklers2.id As id, chalklers2.created_at As created_at, min(bookings2.created_at) As Earliest from bookings bookings2, chalklers chalklers2 where bookings2.chalkler_id=chalklers2.id group by 1,2) As c2 where c1.id=c2.id and c1.created_at > '2012-12-31' group by 1 order by 1;
+
+select count(m.learners) from (select distinct on (bookings.chalkler_id) bookings.chalkler_id As learners from bookings,lessons,channel_lessons where bookings.lesson_id=lessons.id and lessons.id=channel_lessons.lesson_id and channel_lessons.channel_id=1 and bookings.chalkler_id<> lessons.teacher_id except (select DISTINCT on (lessons1.teacher_id) lessons1.teacher_id from lessons lessons1, channel_lessons channel_lessons1 where lessons1.id=channel_lessons1.lesson_id and channel_lessons1.channel_id=1)) m;
+
+select count(m.teachers) from (select distinct on (lessons1.teacher_id) lessons1.teacher_id As teachers from lessons lessons1, channel_lessons channel_lessons1 where lessons1.id=channel_lessons1.lesson_id and channel_lessons1.channel_id=1 except (select distinct on (bookings.chalkler_id) bookings.chalkler_id As learners from bookings,lessons,channel_lessons where bookings.lesson_id=lessons.id and lessons.id=channel_lessons.lesson_id and channel_lessons.channel_id=1 and bookings.chalkler_id<> lessons.teacher_id)) m;
+
+Top spenders for classes occurring after January 1st:
+select c.id, c.name, c.created_at, m.Turnover, max(bookings2.created_at) from chalklers c LEFT OUTER JOIN (select chalklers.id As ID, sum(payments.total) As Turnover from chalklers, bookings, lessons, payments where chalklers.id=bookings.chalkler_id and bookings.lesson_id=lessons.id and bookings.id=payments.booking_id and  bookings.paid=true and lessons.start_at+interval '13 hours'>='2013-01-01' and lessons.id<>543 group by 1 order by 2 desc) m ON (c.id=m.ID) JOIN channel_chalklers ON (c.id=channel_chalklers.chalkler_id) JOIN bookings as bookings2 ON (c.id=bookings2.chalkler_id) where channel_chalklers.channel_id=1 and bookings2.status<>'no' group by 1,2,3,4 order by 4 asc;
+select c.id, c.name, m.Turnover from chalklers c LEFT OUTER JOIN (select chalklers.id As ID, sum(payments.total) As Turnover from chalklers, bookings, lessons, payments where chalklers.id=bookings.chalkler_id and bookings.lesson_id=lessons.id and bookings.id=payments.booking_id and  bookings.paid=true and lessons.start_at+interval '13 hours'>='2013-01-01' and lessons.id<>543 group by 1 order by 2 desc) m ON (c.id=m.ID) JOIN channel_chalklers ON (c.id=channel_chalklers.chalkler_id) where channel_chalklers.channel_id=1 order by 3 asc;
+Top spenders with average spend per week:
+select c.id, c.name, m.Turnover, m.Days from chalklers c LEFT OUTER JOIN (select chalklers.id As ID, sum(payments.total) As Turnover, max(payments.date)-min(payments.date) As Days from chalklers, bookings, lessons, payments where chalklers.id=bookings.chalkler_id and bookings.lesson_id=lessons.id and bookings.id=payments.booking_id and  bookings.paid=true and lessons.start_at+interval '13 hours'>='2013-01-01' and lessons.id<>543 group by 1 order by 2 desc) m ON (c.id=m.ID) JOIN channel_chalklers ON (c.id=channel_chalklers.chalkler_id) where channel_chalklers.channel_id=1  order by 3 asc;
+# of lessons in each category per week:
+select date_part('week', lessons.start_at+interval '13 hours'),count(lessons.id) from lessons, channel_lessons, lesson_categories where lessons.id=channel_lessons.lesson_id and lessons.id=lesson_categories.lesson_id and channel_lessons.channel_id=1 and lessons.status='Published' and lesson_categories.category_id=55 group by 1 order by 1;
+
+Bookings csv for model:
+select bookings.chalkler_id, categories.name, bookings.created_at, bookings.status from chalklers, bookings, lessons, lesson_categories, categories, channel_lessons where chalklers.id = bookings.chalkler_id and bookings.lesson_id = lessons.id and bookings.visible = true and bookings.chalkler_id<>lessons.teacher_id and lessons.teacher_id<>80 and lessons.id = lesson_categories.lesson_id and lesson_categories.category_id=categories.id and lessons.id=channel_lessons.lesson_id and channel_lessons.channel_id=1 and chalklers.id<>985 and chalklers.id<>527;
+
+select chalklers.name, lessons.start_at - chalklers.created_at from chalklers, bookings, lessons where chalklers.id=bookings.chalkler_id and bookings.lesson_id=lessons.id and bookings.status='yes' and chalklers.id<>lessons.teacher_id and lessons.id=560;
+
+select categories.name, count(chalklers.id) from chalklers, bookings, lessons,lesson_categories, channel_lessons,categories where chalklers.id=bookings.chalkler_id and bookings.lesson_id=lessons.id and lessons.id=lesson_categories.lesson_id and lessons.id=channel_lessons.lesson_id and channel_lessons.channel_id=1 and lesson_categories.category_id=categories.id and bookings.status='yes' and chalklers.id<>lessons.teacher_id and lessons.start_at - chalklers.created_at > interval '7 days' and lessons.start_at - chalklers.created_at <= interval '21 days' group by 1 order by 1;
+
+select categories.name, count(chalklers.id) from chalklers, bookings, lessons,lesson_categories, channel_lessons,
+categories where chalklers.id=bookings.chalkler_id and bookings.lesson_id=lessons.id and lessons.id=lesson_categories.lesson_id and lessons.id=channel_lessons.lesson_id and channel_lessons.channel_id=1 and lesson_categories.category_id=categories.id and bookings.status='yes' and chalklers.id<>lessons.teacher_id and lessons.start_at - chalklers.created_at > interval '28 days' and lessons.start_at - chalklers.created_at <= interval '35 days' and lessons.teacher_id = 145 group by 1 order by 1;
+
+Retrieve lesson IDs to get page views
+select lessons.meetup_id, categories.name, lessons.name, lessons.start_at, sum(bookings.guests+1), lessons.visible from lessons, channel_lessons, bookings,lesson_categories, categories where lessons.id=channel_lessons.lesson_id and channel_lessons.channel_id=1 and bookings.lesson_id=lessons.id and lessons.id=lesson_categories.lesson_id and lesson_categories.category_id=categories.id and bookings.status<>'no' and bookings.visible = 't' and bookings.chalkler_id<>lessons.teacher_id and lessons.visible='f' and lessons.start_at>='2013-01-01' and lessons.start_at<='2013-06-01' group by 1,2,3,4,6 order by 4;
+
+Classes held at Enspiral
+select lessons.name,lessons.start_at+interval '13 hours',lessons.cost from lessons where lessons.meetup_data LIKE '%18-24 Allen%' and lessons.start_at>='2013-05-01' and lessons.start_at<'2013-06-01' and lessons.visible=true and lessons.cost>0;
+Classes ran by a teacher
+select lessons.teacher_id As ID, lessons.name As Name, categories.name as Category from lessons
